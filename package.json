@@ -1,0 +1,48 @@
+{
+  "name": "prettier-plugin-wgsl",
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/prettier-plugin-wgsl.umd.cjs",
+  "module": "./dist/prettier-plugin-wgsl.js",
+  "exports": {
+    ".": {
+      "import": "./dist/prettier-plugin-wgsl.js",
+      "require": "./dist/prettier-plugin-wgsl.umd.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "preview": "vite preview",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,json,css,md}": [
+      "eslint --fix",
+      "rewrap -i",
+      "prettier --write --ignore-unknown"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@stkb/rewrap": "^0.1.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^15.9.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "3.3.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^5.4.1",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "wgsl_reflect": "^1.2.3"
+  }
+}
