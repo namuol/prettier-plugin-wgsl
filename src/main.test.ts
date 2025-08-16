@@ -1,6 +1,8 @@
 import prettier from 'prettier';
 import {describe, expect, it} from 'vitest';
 
+import plugin from './main.js';
+
 type Test = {
   name: string;
   parser: 'wgsl' | 'typescript';
@@ -22,7 +24,7 @@ describe('prettier-plugin-wgsl', () => {
     it(`should format ${test.name} correctly`, async () => {
       const result = await prettier.format(test.input, {
         parser: test.parser,
-        plugins: ['.'],
+        plugins: [plugin],
       });
       expect(result).toBe(test.expected);
     });
