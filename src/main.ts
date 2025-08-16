@@ -1,21 +1,23 @@
+import type {Plugin} from 'prettier';
+
 /**
  * Prettier plugin for WGSL (WebGPU Shading Language)
  */
-export default {
+const plugin: Plugin = {
   languages: [
     {
-      name: "WGSL",
-      parsers: ["wgsl"],
-      extensions: [".wgsl"],
-      vscodeLanguageIds: ["wgsl"],
+      name: 'WGSL',
+      parsers: ['wgsl'],
+      extensions: ['.wgsl'],
+      vscodeLanguageIds: ['wgsl'],
     },
   ],
   parsers: {
     wgsl: {
-      parse: (text: string) => {
-        throw new Error("WGSL parser not implemented yet");
+      parse: () => {
+        throw new Error('WGSL parser not implemented yet');
       },
-      astFormat: "wgsl",
+      astFormat: 'wgsl',
       locStart: () => 0,
       locEnd: () => 0,
     },
@@ -23,10 +25,12 @@ export default {
   printers: {
     wgsl: {
       print: () => {
-        throw new Error("WGSL printer not implemented yet");
+        throw new Error('WGSL printer not implemented yet');
       },
     },
   },
   options: {},
   defaultOptions: {},
 };
+
+export default plugin;
