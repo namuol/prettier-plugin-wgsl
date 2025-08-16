@@ -1,3 +1,4 @@
+import dedent from 'dedent';
 import prettier from 'prettier';
 import {describe, expect, it} from 'vitest';
 
@@ -16,6 +17,15 @@ const tests: Test[] = [
     parser: 'wgsl',
     input: 'var x:f32=1.0;',
     expected: 'var x: f32 = 1.0;',
+  },
+  {
+    name: 'multiple lines',
+    parser: 'wgsl',
+    input: 'var x: f32 = 1.0;var y: f32 = 2.0;',
+    expected: dedent`
+      var x: f32 = 1.0;
+      var y: f32 = 2.0;
+    `,
   },
 ];
 
