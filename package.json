@@ -44,6 +44,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "wgsl_reflect": "^1.2.3"
+    "wgsl_reflect": "github:namuol/wgsl_reflect"
   }
 }

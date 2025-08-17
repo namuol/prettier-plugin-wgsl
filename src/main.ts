@@ -42,9 +42,7 @@ const {
   builders: {hardline, indent, join},
 } = await import('prettier/doc');
 
-function printWgslNode(path: AstPath<Node>): Doc {
-  const node = path.getValue();
-
+function printWgslNode(node: Node): Doc {
   switch (node.astNodeType) {
     // Statement types
     case 'var':
@@ -262,12 +260,7 @@ function printFunction(node: Function): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -307,15 +300,15 @@ function printStruct(node: Struct): Doc {
 }
 
 function printStatement(stmt: Statement): Doc {
-  return printWgslNode({getValue: () => stmt} as unknown as AstPath<Node>);
+  return printWgslNode(stmt);
 }
 
 function printExpression(expr: Expression): Doc {
-  return printWgslNode({getValue: () => expr} as unknown as AstPath<Node>);
+  return printWgslNode(expr);
 }
 
 function printType(type: Type): Doc {
-  return printWgslNode({getValue: () => type} as unknown as AstPath<Node>);
+  return printWgslNode(type);
 }
 
 function printTypeNode(node: Type): Doc {
@@ -332,12 +325,7 @@ function printIf(node: If): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -409,12 +397,7 @@ function printFor(node: For): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -430,12 +413,7 @@ function printWhile(node: While): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -454,11 +432,7 @@ function printSwitch(node: Switch): Doc {
       indent([
         join(
           hardline,
-          node.cases.map((switchCase) =>
-            printWgslNode({
-              getValue: () => switchCase,
-            } as unknown as AstPath<Node>),
-          ),
+          node.cases.map((switchCase) => printWgslNode(switchCase)),
         ),
       ]),
       hardline,
@@ -740,12 +714,7 @@ function printCase(node: Case): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -761,12 +730,7 @@ function printDefault(node: Default): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -782,12 +746,7 @@ function printElseIf(node: ElseIf): Doc {
   if (node.body.length > 0) {
     parts.push(
       hardline,
-      indent([
-        join(
-          hardline,
-          node.body.map((stmt) => printStatement(stmt)),
-        ),
-      ]),
+      indent([join(hardline, node.body.map(printStatement))]),
       hardline,
     );
   }
@@ -800,7 +759,7 @@ function printElseIf(node: ElseIf): Doc {
 /**
  * Prettier plugin for WGSL (WebGPU Shading Language)
  */
-const plugin: Plugin = {
+const plugin: Plugin<Statement[]> = {
   languages: [
     {
       name: 'WGSL',
@@ -811,14 +770,7 @@ const plugin: Plugin = {
   ],
   parsers: {
     wgsl: {
-      parse: (text: string) => {
-        const parser = new WgslParser();
-        const statements = parser.parse(text);
-        return {
-          type: 'Program',
-          body: statements,
-        };
-      },
+      parse: (text: string) => new WgslParser().parse(text),
       astFormat: 'wgsl',
       locStart: () => 0,
       locEnd: () => 0,
@@ -826,17 +778,9 @@ const plugin: Plugin = {
   },
   printers: {
     wgsl: {
-      print: (path: AstPath) => {
-        const node = path.node;
-
-        if (node.type === 'Program') {
-          return join(
-            hardline,
-            node.body.map((stmt: Statement) => printStatement(stmt)),
-          );
-        }
-
-        return printWgslNode(path);
+      print: (path: AstPath<Statement[]>) => {
+        const statements = path.node;
+        return join(hardline, statements.map(printStatement));
       },
     },
   },
