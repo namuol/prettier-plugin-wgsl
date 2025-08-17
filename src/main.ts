@@ -73,7 +73,7 @@ const plugin: Plugin<ParsedWgsl> = {
   printers: {
     wgsl: {
       print: (path: AstPath<ParsedWgsl>) => {
-        const {statements} = path.node;
+        const {text, statements} = path.node;
         return join(hardline, statements.map(printStatement));
 
         function printWgslNode(node: Node): Doc {
@@ -537,7 +537,7 @@ const plugin: Plugin<ParsedWgsl> = {
         function printLiteralExpr(node: LiteralExpr): Doc {
           // Check if this is a floating point number and ensure it has decimal
           // point
-          const value = node.value.toString();
+          const value = text.slice(node.start, node.start + node.length);
           if (
             node.type.name === 'f32' &&
             !value.includes('.') &&
