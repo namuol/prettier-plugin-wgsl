@@ -42,724 +42,15 @@ const {
   builders: {hardline, indent, join},
 } = await import('prettier/doc');
 
-function printWgslNode(node: Node): Doc {
-  switch (node.astNodeType) {
-    // Statement types
-    case 'var':
-      return printVar(node as Var);
-    case 'let':
-      return printLet(node as Let);
-    case 'const':
-      return printConst(node as Const);
-    case 'function':
-      return printFunction(node as Function);
-    case 'struct':
-      return printStruct(node as Struct);
-    case 'return':
-      return printReturn(node as Return);
-    case 'if':
-      return printIf(node as If);
-    case 'for':
-      return printFor(node as For);
-    case 'while':
-      return printWhile(node as While);
-    case 'switch':
-      return printSwitch(node as Switch);
-    case 'assign':
-      return printAssign(node as Assign);
-    case 'break':
-      return printBreak();
-    case 'continue':
-      return printContinue();
-    case 'discard':
-      return printDiscard();
-    case 'increment':
-      return printIncrement(node as Increment);
-    case 'call':
-      return printCall(node as Call);
-
-    // Expression types
-    case 'literalExpr':
-      return printLiteralExpr(node as LiteralExpr);
-    case 'variableExpr':
-    case 'varExpr':
-      return printVariableExpr(node as VariableExpr);
-    case 'binaryOperator':
-    case 'binaryOp':
-      return printBinaryOperator(node as BinaryOperator);
-    case 'unaryOperator':
-    case 'unaryOp':
-      return printUnaryOperator(node as UnaryOperator);
-    case 'callExpr':
-      return printCallExpr(node as CallExpr);
-    case 'createExpr':
-      return printCreateExpr(node as CreateExpr);
-    case 'stringExpr':
-      return printStringExpr(node as StringExpr);
-    case 'arrayIndex':
-      return printArrayIndexExpr(node as ArrayIndex);
-
-    // Type expressions
-    case 'type':
-      return printTypeNode(node as Type);
-    case 'templateType':
-    case 'template':
-      return printTemplateType(node as TemplateType);
-    case 'arrayType':
-    case 'array':
-      return printArrayType(node as ArrayType);
-    case 'pointerType':
-      return printPointerType(node as PointerType);
-    case 'samplerType':
-    case 'sampler':
-      return printSamplerType(node as SamplerType);
-
-    // Other nodes
-    case 'argument':
-      return printArgument(node as Argument);
-    case 'member':
-      return printMember(node as Member);
-    case 'attribute':
-      return printAttribute(node as Attribute);
-    case 'case':
-      return printCase(node as Case);
-    case 'default':
-      return printDefault(node as Default);
-    case 'elseIf':
-      return printElseIf(node as ElseIf);
-
-    // Unimplemented types - group together for exhaustiveness
-    case 'loop':
-    case 'continuing':
-    case 'enable':
-    case 'requires':
-    case 'diagnostic':
-    case 'alias':
-    case 'staticAssert':
-    case 'override':
-    case 'typecastExpr':
-    case 'bitcastExpr':
-    case 'constExpr':
-    case 'defaultSelector':
-      throw new Error(`Unimplemented AST node type: ${node.astNodeType}`);
-
-    default:
-      throw new Error(`Unknown AST node type: ${(node as Node).astNodeType}`);
-  }
-}
-
-function printVar(node: Var): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    parts.push(...node.attributes.map((attr) => printAttribute(attr)));
-    parts.push(hardline);
-  }
-
-  parts.push('var');
-
-  if (node.storage || node.access) {
-    parts.push('<');
-    if (node.storage) {
-      parts.push(node.storage);
-      if (node.access) {
-        parts.push(', ', node.access);
-      }
-    }
-    parts.push('>');
-  }
-
-  parts.push(' ', node.name);
-
-  if (node.type) {
-    parts.push(': ', printType(node.type));
-  }
-
-  if (node.value) {
-    parts.push(' = ', printExpression(node.value));
-  }
-
-  parts.push(';');
-
-  return parts;
-}
-
-function printLet(node: Let): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    parts.push(...node.attributes.map((attr) => printAttribute(attr)));
-    parts.push(hardline);
-  }
-
-  parts.push('let ');
-  parts.push(node.name);
-
-  if (node.type) {
-    parts.push(': ', printType(node.type));
-  }
-
-  if (node.value) {
-    parts.push(' = ', printExpression(node.value));
-  }
-
-  parts.push(';');
-
-  return parts;
-}
-
-function printConst(node: Const): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    parts.push(...node.attributes.map((attr) => printAttribute(attr)));
-    parts.push(hardline);
-  }
-
-  parts.push('const ');
-  parts.push(node.name);
-
-  if (node.type) {
-    parts.push(': ', printType(node.type));
-  }
-
-  parts.push(' = ', printExpression(node.value));
-  parts.push(';');
-
-  return parts;
-}
-
-function printFunction(node: Function): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    node.attributes.forEach((attr) => {
-      parts.push(printAttribute(attr), hardline);
-    });
-  }
-
-  parts.push('fn ', node.name, '(');
-
-  if (node.args.length > 0) {
-    parts.push(
-      join(
-        ', ',
-        node.args.map((arg) => printArgument(arg)),
-      ),
-    );
-  }
-
-  parts.push(')');
-
-  if (node.returnType) {
-    parts.push(' -> ', printType(node.returnType));
-  }
-
-  parts.push(' {');
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printStruct(node: Struct): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    node.attributes.forEach((attr) => {
-      parts.push(printAttribute(attr), hardline);
-    });
-  }
-
-  parts.push('struct ', node.name, ' {');
-
-  if (node.members.length > 0) {
-    parts.push(
-      hardline,
-      indent([
-        join(
-          hardline,
-          node.members.map((member) => printMember(member)),
-        ),
-      ]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printStatement(stmt: Statement): Doc {
-  return printWgslNode(stmt);
-}
-
-function printExpression(expr: Expression): Doc {
-  return printWgslNode(expr);
-}
-
-function printType(type: Type): Doc {
-  return printWgslNode(type);
-}
-
-function printTypeNode(node: Type): Doc {
-  return node.name;
-}
-
-function printReturn(node: Return): Doc {
-  return ['return ', printExpression(node.value), ';'];
-}
-
-function printIf(node: If): Doc {
-  const parts: Doc[] = ['if (', printExpression(node.condition), ') {'];
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  if (node.elseif) {
-    node.elseif.forEach((elseif) => {
-      parts.push(' else ', printElseIf(elseif));
-    });
-  }
-
-  if (node.else) {
-    parts.push(' else {');
-    if (node.else.length > 0) {
-      parts.push(
-        hardline,
-        indent([
-          join(
-            hardline,
-            node.else.map((stmt) => printStatement(stmt)),
-          ),
-        ]),
-        hardline,
-      );
-    }
-    parts.push('}');
-  }
-
-  return parts;
-}
-
-function printFor(node: For): Doc {
-  const parts: Doc[] = ['for ('];
-
-  if (node.init) {
-    // Remove semicolon from init statement for for-loop formatting
-    const initParts = printStatement(node.init);
-    if (Array.isArray(initParts)) {
-      const lastPart = initParts[initParts.length - 1];
-      if (lastPart === ';') {
-        initParts.pop();
-      }
-    }
-    parts.push(initParts);
-  }
-
-  parts.push('; ');
-
-  if (node.condition) {
-    parts.push(printExpression(node.condition));
-  }
-
-  parts.push('; ');
-
-  if (node.increment) {
-    const incParts = printStatement(node.increment);
-    if (Array.isArray(incParts)) {
-      const lastPart = incParts[incParts.length - 1];
-      if (lastPart === ';') {
-        incParts.pop();
-      }
-    }
-    parts.push(incParts);
-  }
-
-  parts.push(') {');
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printWhile(node: While): Doc {
-  const parts: Doc[] = ['while (', printExpression(node.condition), ') {'];
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printSwitch(node: Switch): Doc {
-  const parts: Doc[] = ['switch (', printExpression(node.condition), ') {'];
-
-  if (node.cases.length > 0) {
-    parts.push(
-      hardline,
-      indent([
-        join(
-          hardline,
-          node.cases.map((switchCase) => printWgslNode(switchCase)),
-        ),
-      ]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printAssign(node: Assign): Doc {
-  return [
-    printExpression(node.variable),
-    ' ',
-    node.operator,
-    ' ',
-    printExpression(node.value),
-    ';',
-  ];
-}
-
-function printBreak(): Doc {
-  return 'break;';
-}
-
-function printContinue(): Doc {
-  return 'continue;';
-}
-
-function printDiscard(): Doc {
-  return 'discard;';
-}
-
-function printIncrement(node: Increment): Doc {
-  return [printExpression(node.variable), node.operator, ';'];
-}
-
-function printCall(node: Call): Doc {
-  const parts: Doc[] = [node.name, '('];
-
-  if (node.args.length > 0) {
-    parts.push(
-      join(
-        ', ',
-        node.args.map((arg) => printExpression(arg)),
-      ),
-    );
-  }
-
-  parts.push(')', ';');
-
-  return parts;
-}
-
-function printLiteralExpr(node: LiteralExpr): Doc {
-  // Check if this is a floating point number and ensure it has decimal point
-  const value = node.value.toString();
-  if (
-    node.type.name === 'f32' &&
-    !value.includes('.') &&
-    !value.includes('e')
-  ) {
-    return value + '.0';
-  }
-  return value;
-}
-
-function printVariableExpr(node: VariableExpr): Doc {
-  const parts: Doc[] = [node.name];
-
-  if (node.postfix) {
-    parts.push(printPostfixExpression(node.postfix));
-  }
-
-  return parts;
-}
-
-function printStringExpr(node: StringExpr): Doc {
-  // StringExpr is likely used for property names in member access
-  return node.value;
-}
-
-function printArrayIndexExpr(node: ArrayIndex): Doc {
-  return ['[', printExpression(node.index), ']'];
-}
-
-function printPostfixExpression(postfix: Expression): Doc {
-  // Handle member access (.property) and array access ([index])
-  const postfixNode = postfix as Expression & {
-    astNodeType: string;
-    member?: string;
-  };
-  switch (postfixNode.astNodeType) {
-    case 'memberExpr':
-      return ['.', postfixNode.member ?? ''];
-    case 'arrayIndex':
-      return printArrayIndexExpr(postfix as ArrayIndex);
-    case 'stringExpr':
-      return ['.', printStringExpr(postfix as StringExpr)];
-    default:
-      // For other postfix expressions, recursively print them
-      return printExpression(postfix);
-  }
-}
-
-function printBinaryOperator(node: BinaryOperator): Doc {
-  return [
-    printExpression(node.left),
-    ' ',
-    node.operator,
-    ' ',
-    printExpression(node.right),
-  ];
-}
-
-function printUnaryOperator(node: UnaryOperator): Doc {
-  return [node.operator, printExpression(node.right)];
-}
-
-function printCallExpr(node: CallExpr): Doc {
-  const parts: Doc[] = [node.name, '('];
-
-  if (node.args && node.args.length > 0) {
-    parts.push(
-      join(
-        ', ',
-        node.args.map((arg) => printExpression(arg)),
-      ),
-    );
-  }
-
-  parts.push(')');
-
-  if (node.postfix) {
-    parts.push(printPostfixExpression(node.postfix));
-  }
-
-  return parts;
-}
-
-function printCreateExpr(node: CreateExpr): Doc {
-  const parts: Doc[] = [];
-
-  if (node.type) {
-    parts.push(printType(node.type));
-  }
-
-  parts.push('(');
-
-  if (node.args && node.args.length > 0) {
-    parts.push(
-      join(
-        ', ',
-        node.args.map((arg) => printExpression(arg)),
-      ),
-    );
-  }
-
-  parts.push(')');
-
-  return parts;
-}
-
-function printTemplateType(node: TemplateType): Doc {
-  const parts: Doc[] = [node.name];
-
-  if (node.format || node.access) {
-    parts.push('<');
-    if (node.format) {
-      parts.push(printType(node.format));
-      if (node.access) {
-        parts.push(', ', node.access);
-      }
-    } else if (node.access) {
-      parts.push(node.access);
-    }
-    parts.push('>');
-  }
-
-  return parts;
-}
-
-function printArrayType(node: ArrayType): Doc {
-  const parts: Doc[] = ['array'];
-
-  if (node.format || node.count > 0) {
-    parts.push('<');
-    if (node.format) {
-      parts.push(printType(node.format));
-      if (node.count > 0) {
-        parts.push(', ', node.count.toString());
-      }
-    } else if (node.count > 0) {
-      parts.push(node.count.toString());
-    }
-    parts.push('>');
-  }
-
-  return parts;
-}
-
-function printPointerType(node: PointerType): Doc {
-  return ['*', node.type ? printType(node.type) : ''];
-}
-
-function printSamplerType(node: SamplerType): Doc {
-  const parts: Doc[] = [node.name];
-
-  if (node.format) {
-    parts.push('<');
-    if (typeof node.format === 'string') {
-      parts.push(node.format);
-    } else {
-      parts.push(printType(node.format));
-    }
-    parts.push('>');
-  }
-
-  return parts;
-}
-
-function printArgument(node: Argument): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    parts.push(...node.attributes.map((attr) => printAttribute(attr)), ' ');
-  }
-
-  parts.push(node.name, ': ', printType(node.type));
-
-  return parts;
-}
-
-function printMember(node: Member): Doc {
-  const parts: Doc[] = [];
-
-  if (node.attributes) {
-    parts.push(...node.attributes.map((attr) => printAttribute(attr)), ' ');
-  }
-
-  parts.push(node.name);
-
-  if (node.type) {
-    parts.push(': ', printType(node.type));
-  }
-
-  parts.push(';');
-
-  return parts;
-}
-
-function printAttribute(node: Attribute): Doc {
-  const parts: Doc[] = ['@', node.name];
-
-  if (node.value) {
-    parts.push('(');
-    if (Array.isArray(node.value)) {
-      parts.push(join(', ', node.value));
-    } else {
-      parts.push(node.value);
-    }
-    parts.push(')');
-  }
-
-  return parts;
-}
-
-function printCase(node: Case): Doc {
-  const parts: Doc[] = [];
-
-  node.selectors.forEach((selector, i) => {
-    if (i > 0) parts.push(', ');
-    parts.push('case ', printExpression(selector));
-  });
-
-  parts.push(': {');
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printDefault(node: Default): Doc {
-  const parts: Doc[] = ['default: {'];
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
-
-function printElseIf(node: ElseIf): Doc {
-  const parts: Doc[] = ['if (', printExpression(node.condition), ') {'];
-
-  if (node.body.length > 0) {
-    parts.push(
-      hardline,
-      indent([join(hardline, node.body.map(printStatement))]),
-      hardline,
-    );
-  }
-
-  parts.push('}');
-
-  return parts;
-}
+type ParsedWgsl = {
+  text: string;
+  statements: Statement[];
+};
 
 /**
  * Prettier plugin for WGSL (WebGPU Shading Language)
  */
-const plugin: Plugin<Statement[]> = {
+const plugin: Plugin<ParsedWgsl> = {
   languages: [
     {
       name: 'WGSL',
@@ -770,7 +61,10 @@ const plugin: Plugin<Statement[]> = {
   ],
   parsers: {
     wgsl: {
-      parse: (text: string) => new WgslParser().parse(text),
+      parse: (text: string) => ({
+        text,
+        statements: new WgslParser().parse(text),
+      }),
       astFormat: 'wgsl',
       locStart: () => 0,
       locEnd: () => 0,
@@ -778,9 +72,742 @@ const plugin: Plugin<Statement[]> = {
   },
   printers: {
     wgsl: {
-      print: (path: AstPath<Statement[]>) => {
-        const statements = path.node;
+      print: (path: AstPath<ParsedWgsl>) => {
+        const {statements} = path.node;
         return join(hardline, statements.map(printStatement));
+
+        function printWgslNode(node: Node): Doc {
+          switch (node.astNodeType) {
+            // Statement types
+            case 'var':
+              return printVar(node as Var);
+            case 'let':
+              return printLet(node as Let);
+            case 'const':
+              return printConst(node as Const);
+            case 'function':
+              return printFunction(node as Function);
+            case 'struct':
+              return printStruct(node as Struct);
+            case 'return':
+              return printReturn(node as Return);
+            case 'if':
+              return printIf(node as If);
+            case 'for':
+              return printFor(node as For);
+            case 'while':
+              return printWhile(node as While);
+            case 'switch':
+              return printSwitch(node as Switch);
+            case 'assign':
+              return printAssign(node as Assign);
+            case 'break':
+              return printBreak();
+            case 'continue':
+              return printContinue();
+            case 'discard':
+              return printDiscard();
+            case 'increment':
+              return printIncrement(node as Increment);
+            case 'call':
+              return printCall(node as Call);
+
+            // Expression types
+            case 'literalExpr':
+              return printLiteralExpr(node as LiteralExpr);
+            case 'variableExpr':
+            case 'varExpr':
+              return printVariableExpr(node as VariableExpr);
+            case 'binaryOperator':
+            case 'binaryOp':
+              return printBinaryOperator(node as BinaryOperator);
+            case 'unaryOperator':
+            case 'unaryOp':
+              return printUnaryOperator(node as UnaryOperator);
+            case 'callExpr':
+              return printCallExpr(node as CallExpr);
+            case 'createExpr':
+              return printCreateExpr(node as CreateExpr);
+            case 'stringExpr':
+              return printStringExpr(node as StringExpr);
+            case 'arrayIndex':
+              return printArrayIndexExpr(node as ArrayIndex);
+
+            // Type expressions
+            case 'type':
+              return printTypeNode(node as Type);
+            case 'templateType':
+            case 'template':
+              return printTemplateType(node as TemplateType);
+            case 'arrayType':
+            case 'array':
+              return printArrayType(node as ArrayType);
+            case 'pointerType':
+              return printPointerType(node as PointerType);
+            case 'samplerType':
+            case 'sampler':
+              return printSamplerType(node as SamplerType);
+
+            // Other nodes
+            case 'argument':
+              return printArgument(node as Argument);
+            case 'member':
+              return printMember(node as Member);
+            case 'attribute':
+              return printAttribute(node as Attribute);
+            case 'case':
+              return printCase(node as Case);
+            case 'default':
+              return printDefault(node as Default);
+            case 'elseIf':
+              return printElseIf(node as ElseIf);
+
+            // Unimplemented types - group together for exhaustiveness
+            case 'loop':
+            case 'continuing':
+            case 'enable':
+            case 'requires':
+            case 'diagnostic':
+            case 'alias':
+            case 'staticAssert':
+            case 'override':
+            case 'typecastExpr':
+            case 'bitcastExpr':
+            case 'constExpr':
+            case 'defaultSelector':
+              throw new Error(
+                `Unimplemented AST node type: ${node.astNodeType}`,
+              );
+
+            default:
+              throw new Error(
+                `Unknown AST node type: ${(node as Node).astNodeType}`,
+              );
+          }
+        }
+
+        function printVar(node: Var): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(...node.attributes.map((attr) => printAttribute(attr)));
+            parts.push(hardline);
+          }
+
+          parts.push('var');
+
+          if (node.storage || node.access) {
+            parts.push('<');
+            if (node.storage) {
+              parts.push(node.storage);
+              if (node.access) {
+                parts.push(', ', node.access);
+              }
+            }
+            parts.push('>');
+          }
+
+          parts.push(' ', node.name);
+
+          if (node.type) {
+            parts.push(': ', printType(node.type));
+          }
+
+          if (node.value) {
+            parts.push(' = ', printExpression(node.value));
+          }
+
+          parts.push(';');
+
+          return parts;
+        }
+
+        function printLet(node: Let): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(...node.attributes.map((attr) => printAttribute(attr)));
+            parts.push(hardline);
+          }
+
+          parts.push('let ');
+          parts.push(node.name);
+
+          if (node.type) {
+            parts.push(': ', printType(node.type));
+          }
+
+          if (node.value) {
+            parts.push(' = ', printExpression(node.value));
+          }
+
+          parts.push(';');
+
+          return parts;
+        }
+
+        function printConst(node: Const): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(...node.attributes.map((attr) => printAttribute(attr)));
+            parts.push(hardline);
+          }
+
+          parts.push('const ');
+          parts.push(node.name);
+
+          if (node.type) {
+            parts.push(': ', printType(node.type));
+          }
+
+          parts.push(' = ', printExpression(node.value));
+          parts.push(';');
+
+          return parts;
+        }
+
+        function printFunction(node: Function): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            node.attributes.forEach((attr) => {
+              parts.push(printAttribute(attr), hardline);
+            });
+          }
+
+          parts.push('fn ', node.name, '(');
+
+          if (node.args.length > 0) {
+            parts.push(
+              join(
+                ', ',
+                node.args.map((arg) => printArgument(arg)),
+              ),
+            );
+          }
+
+          parts.push(')');
+
+          if (node.returnType) {
+            parts.push(' -> ', printType(node.returnType));
+          }
+
+          parts.push(' {');
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printStruct(node: Struct): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            node.attributes.forEach((attr) => {
+              parts.push(printAttribute(attr), hardline);
+            });
+          }
+
+          parts.push('struct ', node.name, ' {');
+
+          if (node.members.length > 0) {
+            parts.push(
+              hardline,
+              indent([
+                join(
+                  hardline,
+                  node.members.map((member) => printMember(member)),
+                ),
+              ]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printStatement(stmt: Statement): Doc {
+          return printWgslNode(stmt);
+        }
+
+        function printExpression(expr: Expression): Doc {
+          return printWgslNode(expr);
+        }
+
+        function printType(type: Type): Doc {
+          return printWgslNode(type);
+        }
+
+        function printTypeNode(node: Type): Doc {
+          return node.name;
+        }
+
+        function printReturn(node: Return): Doc {
+          return ['return ', printExpression(node.value), ';'];
+        }
+
+        function printIf(node: If): Doc {
+          const parts: Doc[] = ['if (', printExpression(node.condition), ') {'];
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          if (node.elseif) {
+            node.elseif.forEach((elseif) => {
+              parts.push(' else ', printElseIf(elseif));
+            });
+          }
+
+          if (node.else) {
+            parts.push(' else {');
+            if (node.else.length > 0) {
+              parts.push(
+                hardline,
+                indent([
+                  join(
+                    hardline,
+                    node.else.map((stmt) => printStatement(stmt)),
+                  ),
+                ]),
+                hardline,
+              );
+            }
+            parts.push('}');
+          }
+
+          return parts;
+        }
+
+        function printFor(node: For): Doc {
+          const parts: Doc[] = ['for ('];
+
+          if (node.init) {
+            // Remove semicolon from init statement for for-loop formatting
+            const initParts = printStatement(node.init);
+            if (Array.isArray(initParts)) {
+              const lastPart = initParts[initParts.length - 1];
+              if (lastPart === ';') {
+                initParts.pop();
+              }
+            }
+            parts.push(initParts);
+          }
+
+          parts.push('; ');
+
+          if (node.condition) {
+            parts.push(printExpression(node.condition));
+          }
+
+          parts.push('; ');
+
+          if (node.increment) {
+            const incParts = printStatement(node.increment);
+            if (Array.isArray(incParts)) {
+              const lastPart = incParts[incParts.length - 1];
+              if (lastPart === ';') {
+                incParts.pop();
+              }
+            }
+            parts.push(incParts);
+          }
+
+          parts.push(') {');
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printWhile(node: While): Doc {
+          const parts: Doc[] = [
+            'while (',
+            printExpression(node.condition),
+            ') {',
+          ];
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printSwitch(node: Switch): Doc {
+          const parts: Doc[] = [
+            'switch (',
+            printExpression(node.condition),
+            ') {',
+          ];
+
+          if (node.cases.length > 0) {
+            parts.push(
+              hardline,
+              indent([
+                join(
+                  hardline,
+                  node.cases.map((switchCase) => printWgslNode(switchCase)),
+                ),
+              ]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printAssign(node: Assign): Doc {
+          return [
+            printExpression(node.variable),
+            ' ',
+            node.operator,
+            ' ',
+            printExpression(node.value),
+            ';',
+          ];
+        }
+
+        function printBreak(): Doc {
+          return 'break;';
+        }
+
+        function printContinue(): Doc {
+          return 'continue;';
+        }
+
+        function printDiscard(): Doc {
+          return 'discard;';
+        }
+
+        function printIncrement(node: Increment): Doc {
+          return [printExpression(node.variable), node.operator, ';'];
+        }
+
+        function printCall(node: Call): Doc {
+          const parts: Doc[] = [node.name, '('];
+
+          if (node.args.length > 0) {
+            parts.push(
+              join(
+                ', ',
+                node.args.map((arg) => printExpression(arg)),
+              ),
+            );
+          }
+
+          parts.push(')', ';');
+
+          return parts;
+        }
+
+        function printLiteralExpr(node: LiteralExpr): Doc {
+          // Check if this is a floating point number and ensure it has decimal
+          // point
+          const value = node.value.toString();
+          if (
+            node.type.name === 'f32' &&
+            !value.includes('.') &&
+            !value.includes('e')
+          ) {
+            return value + '.0';
+          }
+          return value;
+        }
+
+        function printVariableExpr(node: VariableExpr): Doc {
+          const parts: Doc[] = [node.name];
+
+          if (node.postfix) {
+            parts.push(printPostfixExpression(node.postfix));
+          }
+
+          return parts;
+        }
+
+        function printStringExpr(node: StringExpr): Doc {
+          // StringExpr is likely used for property names in member access
+          return node.value;
+        }
+
+        function printArrayIndexExpr(node: ArrayIndex): Doc {
+          return ['[', printExpression(node.index), ']'];
+        }
+
+        function printPostfixExpression(postfix: Expression): Doc {
+          // Handle member access (.property) and array access ([index])
+          const postfixNode = postfix as Expression & {
+            astNodeType: string;
+            member?: string;
+          };
+          switch (postfixNode.astNodeType) {
+            case 'memberExpr':
+              return ['.', postfixNode.member ?? ''];
+            case 'arrayIndex':
+              return printArrayIndexExpr(postfix as ArrayIndex);
+            case 'stringExpr':
+              return ['.', printStringExpr(postfix as StringExpr)];
+            default:
+              // For other postfix expressions, recursively print them
+              return printExpression(postfix);
+          }
+        }
+
+        function printBinaryOperator(node: BinaryOperator): Doc {
+          return [
+            printExpression(node.left),
+            ' ',
+            node.operator,
+            ' ',
+            printExpression(node.right),
+          ];
+        }
+
+        function printUnaryOperator(node: UnaryOperator): Doc {
+          return [node.operator, printExpression(node.right)];
+        }
+
+        function printCallExpr(node: CallExpr): Doc {
+          const parts: Doc[] = [node.name, '('];
+
+          if (node.args && node.args.length > 0) {
+            parts.push(
+              join(
+                ', ',
+                node.args.map((arg) => printExpression(arg)),
+              ),
+            );
+          }
+
+          parts.push(')');
+
+          if (node.postfix) {
+            parts.push(printPostfixExpression(node.postfix));
+          }
+
+          return parts;
+        }
+
+        function printCreateExpr(node: CreateExpr): Doc {
+          const parts: Doc[] = [];
+
+          if (node.type) {
+            parts.push(printType(node.type));
+          }
+
+          parts.push('(');
+
+          if (node.args && node.args.length > 0) {
+            parts.push(
+              join(
+                ', ',
+                node.args.map((arg) => printExpression(arg)),
+              ),
+            );
+          }
+
+          parts.push(')');
+
+          return parts;
+        }
+
+        function printTemplateType(node: TemplateType): Doc {
+          const parts: Doc[] = [node.name];
+
+          if (node.format || node.access) {
+            parts.push('<');
+            if (node.format) {
+              parts.push(printType(node.format));
+              if (node.access) {
+                parts.push(', ', node.access);
+              }
+            } else if (node.access) {
+              parts.push(node.access);
+            }
+            parts.push('>');
+          }
+
+          return parts;
+        }
+
+        function printArrayType(node: ArrayType): Doc {
+          const parts: Doc[] = ['array'];
+
+          if (node.format || node.count > 0) {
+            parts.push('<');
+            if (node.format) {
+              parts.push(printType(node.format));
+              if (node.count > 0) {
+                parts.push(', ', node.count.toString());
+              }
+            } else if (node.count > 0) {
+              parts.push(node.count.toString());
+            }
+            parts.push('>');
+          }
+
+          return parts;
+        }
+
+        function printPointerType(node: PointerType): Doc {
+          return ['*', node.type ? printType(node.type) : ''];
+        }
+
+        function printSamplerType(node: SamplerType): Doc {
+          const parts: Doc[] = [node.name];
+
+          if (node.format) {
+            parts.push('<');
+            if (typeof node.format === 'string') {
+              parts.push(node.format);
+            } else {
+              parts.push(printType(node.format));
+            }
+            parts.push('>');
+          }
+
+          return parts;
+        }
+
+        function printArgument(node: Argument): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(
+              ...node.attributes.map((attr) => printAttribute(attr)),
+              ' ',
+            );
+          }
+
+          parts.push(node.name, ': ', printType(node.type));
+
+          return parts;
+        }
+
+        function printMember(node: Member): Doc {
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(
+              ...node.attributes.map((attr) => printAttribute(attr)),
+              ' ',
+            );
+          }
+
+          parts.push(node.name);
+
+          if (node.type) {
+            parts.push(': ', printType(node.type));
+          }
+
+          parts.push(';');
+
+          return parts;
+        }
+
+        function printAttribute(node: Attribute): Doc {
+          const parts: Doc[] = ['@', node.name];
+
+          if (node.value) {
+            parts.push('(');
+            if (Array.isArray(node.value)) {
+              parts.push(join(', ', node.value));
+            } else {
+              parts.push(node.value);
+            }
+            parts.push(')');
+          }
+
+          return parts;
+        }
+
+        function printCase(node: Case): Doc {
+          const parts: Doc[] = [];
+
+          node.selectors.forEach((selector, i) => {
+            if (i > 0) parts.push(', ');
+            parts.push('case ', printExpression(selector));
+          });
+
+          parts.push(': {');
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printDefault(node: Default): Doc {
+          const parts: Doc[] = ['default: {'];
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printElseIf(node: ElseIf): Doc {
+          const parts: Doc[] = ['if (', printExpression(node.condition), ') {'];
+
+          if (node.body.length > 0) {
+            parts.push(
+              hardline,
+              indent([join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
       },
     },
   },
