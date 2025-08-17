@@ -463,6 +463,40 @@ const tests: Test[] = [
       fn main() {}
     `,
   },
+  {
+    name: 'override declaration',
+    input: 'override workgroupSize:u32=64;',
+    expected: 'override workgroupSize: u32 = 64;',
+  },
+  {
+    name: 'override without default value',
+    input: 'override maxIterations:i32;',
+    expected: 'override maxIterations: i32;',
+  },
+  {
+    name: 'const expression in array size',
+    input: 'const SIZE:i32=10;var buffer:array<f32,SIZE>;',
+    expected: dedent`
+      const SIZE: i32 = 10;
+      var buffer: array<f32, 10>;
+    `,
+  },
+  {
+    name: 'switch with default selector',
+    input: 'fn test(){switch(value){case 1:{result=1;}default:{result=0;}}}',
+    expected: dedent`
+      fn test() {
+        switch (value) {
+          case 1: {
+            result = 1;
+          }
+          default: {
+            result = 0;
+          }
+        }
+      }
+    `,
+  },
 ];
 
 describe('prettier-plugin-wgsl', () => {
