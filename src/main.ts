@@ -1,4 +1,5 @@
 import type {AstPath, Doc, Plugin} from 'prettier';
+import {builders} from 'prettier/doc';
 import {
   Argument,
   ArrayIndex,
@@ -38,9 +39,7 @@ import {
   While,
 } from 'wgsl_reflect';
 
-const {
-  builders: {hardline, indent, join},
-} = await import('prettier/doc');
+const {hardline, indent, join} = builders;
 
 type ParsedWgsl = {
   text: string;
@@ -297,8 +296,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -321,8 +319,8 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.members.length > 0) {
             parts.push(
-              hardline,
               indent([
+                hardline,
                 join(
                   hardline,
                   node.members.map((member) => printMember(member)),
@@ -362,8 +360,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -380,8 +377,8 @@ const plugin: Plugin<ParsedWgsl> = {
             parts.push(' else {');
             if (node.else.length > 0) {
               parts.push(
-                hardline,
                 indent([
+                  hardline,
                   join(
                     hardline,
                     node.else.map((stmt) => printStatement(stmt)),
@@ -434,8 +431,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -454,8 +450,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -474,8 +469,8 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.cases.length > 0) {
             parts.push(
-              hardline,
               indent([
+                hardline,
                 join(
                   hardline,
                   node.cases.map((switchCase) => printWgslNode(switchCase)),
@@ -733,7 +728,7 @@ const plugin: Plugin<ParsedWgsl> = {
             parts.push(': ', printType(node.type));
           }
 
-          parts.push(';');
+          parts.push(',');
 
           return parts;
         }
@@ -766,8 +761,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -782,8 +776,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }
@@ -798,8 +791,7 @@ const plugin: Plugin<ParsedWgsl> = {
 
           if (node.body.length > 0) {
             parts.push(
-              hardline,
-              indent([join(hardline, node.body.map(printStatement))]),
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
               hardline,
             );
           }

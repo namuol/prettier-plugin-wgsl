@@ -59,11 +59,11 @@ const tests: Test[] = [
   {
     name: 'struct definition',
     input:
-      'struct VertexInput{@location(0)position:vec3<f32>;@location(1)normal:vec3<f32>;}',
+      'struct VertexInput{@location(0)position:vec3<f32>,@location(1)normal:vec3<f32>}',
     expected: dedent`
       struct VertexInput {
-        @location(0) position: vec3<f32>;
-        @location(1) normal: vec3<f32>;
+        @location(0) position: vec3<f32>,
+        @location(1) normal: vec3<f32>,
       }
     `,
   },
@@ -267,11 +267,11 @@ const tests: Test[] = [
   },
   {
     name: 'struct with nested types',
-    input: 'struct Complex{data:array<vec3<f32>,16>;transform:mat4x4<f32>;}',
+    input: 'struct Complex{data:array<vec3<f32>,16>,transform:mat4x4<f32>}',
     expected: dedent`
       struct Complex {
-        data: array<vec3<f32>, 16>;
-        transform: mat4x4<f32>;
+        data: array<vec3<f32>, 16>,
+        transform: mat4x4<f32>,
       }
     `,
   },
