@@ -1,19 +1,23 @@
 import type {AstPath, Doc, Plugin} from 'prettier';
 import {builders} from 'prettier/doc';
 import {
+  Alias,
   Argument,
   ArrayIndex,
   ArrayType,
   Assign,
   Attribute,
   BinaryOperator,
+  BitcastExpr,
   Call,
   CallExpr,
   Case,
   Const,
+  Continuing,
   CreateExpr,
   Default,
   ElseIf,
+  Enable,
   Expression,
   For,
   Function,
@@ -21,9 +25,11 @@ import {
   Increment,
   Let,
   LiteralExpr,
+  Loop,
   Member,
   Node,
   PointerType,
+  Requires,
   Return,
   SamplerType,
   Statement,
@@ -32,6 +38,7 @@ import {
   Switch,
   TemplateType,
   Type,
+  TypecastExpr,
   UnaryOperator,
   Var,
   VariableExpr,
@@ -142,6 +149,7 @@ const plugin: Plugin<ParsedWgsl> = {
             case 'array':
               return printArrayType(node as ArrayType);
             case 'pointerType':
+            case 'pointer':
               return printPointerType(node as PointerType);
             case 'samplerType':
             case 'sampler':
@@ -160,18 +168,25 @@ const plugin: Plugin<ParsedWgsl> = {
               return printDefault(node as Default);
             case 'elseIf':
               return printElseIf(node as ElseIf);
+            case 'alias':
+              return printAlias(node as Alias);
+            case 'loop':
+              return printLoop(node as Loop);
+            case 'continuing':
+              return printContinuing(node as Continuing);
+            case 'enable':
+              return printEnable(node as Enable);
+            case 'requires':
+              return printRequires(node as Requires);
+            case 'bitcastExpr':
+              return printBitcastExpr(node as BitcastExpr);
+            case 'typecastExpr':
+              return printTypecastExpr(node as TypecastExpr);
 
             // Unimplemented types - group together for exhaustiveness
-            case 'loop':
-            case 'continuing':
-            case 'enable':
-            case 'requires':
             case 'diagnostic':
-            case 'alias':
-            case 'staticAssert':
             case 'override':
-            case 'typecastExpr':
-            case 'bitcastExpr':
+            case 'staticAssert':
             case 'constExpr':
             case 'defaultSelector':
               throw new Error(
@@ -348,7 +363,18 @@ const plugin: Plugin<ParsedWgsl> = {
         }
 
         function printTypeNode(node: Type): Doc {
-          return node.name;
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(
+              ...node.attributes.map((attr) => printAttribute(attr)),
+              ' ',
+            );
+          }
+
+          parts.push(node.name);
+
+          return parts;
         }
 
         function printReturn(node: Return): Doc {
@@ -567,7 +593,14 @@ const plugin: Plugin<ParsedWgsl> = {
           const postfixNode = postfix as Expression & {
             astNodeType: string;
             member?: string;
+            index?: Expression;
           };
+
+          // Check for array access by presence of index property
+          if (postfixNode.index) {
+            return ['[', printExpression(postfixNode.index), ']'];
+          }
+
           switch (postfixNode.astNodeType) {
             case 'memberExpr':
               return ['.', postfixNode.member ?? ''];
@@ -623,24 +656,40 @@ const plugin: Plugin<ParsedWgsl> = {
             parts.push(printType(node.type));
           }
 
-          parts.push('(');
+          const hasPostfix = Boolean(node.postfix);
+          const hasArgs = node.args && node.args.length > 0;
 
-          if (node.args && node.args.length > 0) {
-            parts.push(
-              join(
-                ', ',
-                node.args.map((arg) => printExpression(arg)),
-              ),
-            );
+          // Only add parentheses if we have arguments or no postfix
+          if (hasArgs || !hasPostfix) {
+            parts.push('(');
+
+            if (hasArgs) {
+              parts.push(
+                join(
+                  ', ',
+                  node.args!.map((arg) => printExpression(arg)),
+                ),
+              );
+            }
+
+            parts.push(')');
           }
 
-          parts.push(')');
+          if (node.postfix) {
+            parts.push(printPostfixExpression(node.postfix));
+          }
 
           return parts;
         }
 
         function printTemplateType(node: TemplateType): Doc {
-          const parts: Doc[] = [node.name];
+          const parts: Doc[] = [];
+
+          if (node.attributes) {
+            parts.push(...node.attributes.map(printAttribute), ' ');
+          }
+
+          parts.push(node.name);
 
           if (node.format || node.access) {
             parts.push('<');
@@ -678,7 +727,26 @@ const plugin: Plugin<ParsedWgsl> = {
         }
 
         function printPointerType(node: PointerType): Doc {
-          return ['*', node.type ? printType(node.type) : ''];
+          const parts: Doc[] = ['ptr'];
+
+          // Cast to access storage and access properties
+          const ptrNode = node;
+
+          if (ptrNode.storage || ptrNode.access) {
+            parts.push('<');
+            if (ptrNode.storage) {
+              parts.push(ptrNode.storage);
+              if (ptrNode.type) {
+                parts.push(', ', printType(ptrNode.type));
+              }
+              if (ptrNode.access) {
+                parts.push(', ', ptrNode.access);
+              }
+            }
+            parts.push('>');
+          }
+
+          return parts;
         }
 
         function printSamplerType(node: SamplerType): Doc {
@@ -799,6 +867,84 @@ const plugin: Plugin<ParsedWgsl> = {
           parts.push('}');
 
           return parts;
+        }
+
+        function printAlias(node: Alias): Doc {
+          return ['alias ', node.name, ' = ', printType(node.type), ';'];
+        }
+
+        function printLoop(node: Loop): Doc {
+          const parts: Doc[] = ['loop {'];
+
+          const bodyParts: Doc[] = [];
+
+          if (node.body.length > 0) {
+            // Filter out continuing statements from body since they have
+            // special handling
+            const bodyStatements = node.body.filter(
+              (stmt) => stmt.astNodeType !== 'continuing',
+            );
+            if (bodyStatements.length > 0) {
+              bodyParts.push(
+                join(hardline, bodyStatements.map(printStatement)),
+              );
+            }
+          }
+
+          // Handle continuing separately at the end of the loop
+          if (node.continuing) {
+            bodyParts.push(printContinuing(node.continuing));
+          }
+
+          if (bodyParts.length > 0) {
+            parts.push(indent([hardline, join(hardline, bodyParts)]), hardline);
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printContinuing(node: Continuing): Doc {
+          const parts: Doc[] = ['continuing {'];
+
+          if (node.body.length > 0) {
+            parts.push(
+              indent([hardline, join(hardline, node.body.map(printStatement))]),
+              hardline,
+            );
+          }
+
+          parts.push('}');
+
+          return parts;
+        }
+
+        function printEnable(node: Enable): Doc {
+          return ['enable ', node.name, ';'];
+        }
+
+        function printRequires(node: Requires): Doc {
+          return ['requires ', join(', ', node.extensions), ';'];
+        }
+
+        function printBitcastExpr(node: BitcastExpr): Doc {
+          return [
+            'bitcast<',
+            node.type ? printType(node.type) : '',
+            '>(',
+            printExpression(node.value),
+            ')',
+          ];
+        }
+
+        function printTypecastExpr(node: TypecastExpr): Doc {
+          return [
+            node.type ? printType(node.type) : '',
+            '(',
+            printExpression((node as unknown as {value: Expression}).value),
+            ')',
+          ];
         }
       },
     },

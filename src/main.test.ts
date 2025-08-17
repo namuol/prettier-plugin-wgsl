@@ -69,48 +69,56 @@ const tests: Test[] = [
   },
   {
     name: 'if statement',
-    input: 'if(x>0.0){y=1.0;}else{y=0.0;}',
+    input: 'fn test(){if(x>0.0){y=1.0;}else{y=0.0;}}',
     expected: dedent`
-      if (x > 0.0) {
-        y = 1.0;
-      } else {
-        y = 0.0;
+      fn test() {
+        if (x > 0.0) {
+          y = 1.0;
+        } else {
+          y = 0.0;
+        }
       }
     `,
   },
   {
     name: 'for loop',
-    input: 'for(var i:i32=0;i<10;i=i+1){result=result+array[i];}',
+    input: 'fn test(){for(var i:i32=0;i<10;i=i+1){result=result+array[i];}}',
     expected: dedent`
-      for (var i: i32 = 0; i < 10; i = i + 1) {
-        result = result + array[i];
+      fn test() {
+        for (var i: i32 = 0; i < 10; i = i + 1) {
+          result = result + array[i];
+        }
       }
     `,
   },
   {
     name: 'while loop',
-    input: 'while(count>0){process_item();count=count-1;}',
+    input: 'fn test(){while(count>0){process_item();count=count-1;}}',
     expected: dedent`
-      while (count > 0) {
-        process_item();
-        count = count - 1;
+      fn test() {
+        while (count > 0) {
+          process_item();
+          count = count - 1;
+        }
       }
     `,
   },
   {
     name: 'switch statement',
     input:
-      'switch(value){case 0:{result=0.0;}case 1:{result=1.0;}default:{result=-1.0;}}',
+      'fn test(){switch(value){case 0:{result=0.0;}case 1:{result=1.0;}default:{result=-1.0;}}}',
     expected: dedent`
-      switch (value) {
-        case 0: {
-          result = 0.0;
-        }
-        case 1: {
-          result = 1.0;
-        }
-        default: {
-          result = -1.0;
+      fn test() {
+        switch (value) {
+          case 0: {
+            result = 0.0;
+          }
+          case 1: {
+            result = 1.0;
+          }
+          default: {
+            result = -1.0;
+          }
         }
       }
     `,
@@ -127,8 +135,8 @@ const tests: Test[] = [
   },
   {
     name: 'pointer type',
-    input: 'var ptr:*f32;',
-    expected: 'var ptr: *f32;',
+    input: 'var ptr:ptr<function,f32>;',
+    expected: 'var ptr: ptr<function, f32>;',
   },
   {
     name: 'atomic type',
@@ -189,12 +197,14 @@ const tests: Test[] = [
   },
   {
     name: 'assignment operators',
-    input: 'x+=1.0;y-=2.0;z*=3.0;w/=4.0;',
+    input: 'fn test(){x+=1.0;y-=2.0;z*=3.0;w/=4.0;}',
     expected: dedent`
-      x += 1.0;
-      y -= 2.0;
-      z *= 3.0;
-      w /= 4.0;
+      fn test() {
+        x += 1.0;
+        y -= 2.0;
+        z *= 3.0;
+        w /= 4.0;
+      }
     `,
   },
   {
@@ -207,10 +217,10 @@ const tests: Test[] = [
   },
   {
     name: 'type aliases',
-    input: 'type Color=vec3<f32>;type Matrix=mat4x4<f32>;',
+    input: 'alias Color=vec3<f32>;alias Matrix=mat4x4<f32>;',
     expected: dedent`
-      type Color = vec3<f32>;
-      type Matrix = mat4x4<f32>;
+      alias Color = vec3<f32>;
+      alias Matrix = mat4x4<f32>;
     `,
   },
   {
@@ -229,9 +239,9 @@ const tests: Test[] = [
     expected: 'var<storage, read> input_buffer: array<Vertex>;',
   },
   {
-    name: 'push constants',
-    input: 'var<push_constant>push_data:PushConstants;',
-    expected: 'var<push_constant> push_data: PushConstants;',
+    name: 'private storage',
+    input: 'var<private>private_data:f32;',
+    expected: 'var<private> private_data: f32;',
   },
   {
     name: 'function with multiple statements',
@@ -247,16 +257,18 @@ const tests: Test[] = [
   {
     name: 'nested control flow',
     input:
-      'if(x>0.0){if(y>0.0){result=1.0;}else{result=2.0;}}else{result=0.0;}',
+      'fn test(){if(x>0.0){if(y>0.0){result=1.0;}else{result=2.0;}}else{result=0.0;}}',
     expected: dedent`
-      if (x > 0.0) {
-        if (y > 0.0) {
-          result = 1.0;
+      fn test() {
+        if (x > 0.0) {
+          if (y > 0.0) {
+            result = 1.0;
+          } else {
+            result = 2.0;
+          }
         } else {
-          result = 2.0;
+          result = 0.0;
         }
-      } else {
-        result = 0.0;
       }
     `,
   },
@@ -276,10 +288,10 @@ const tests: Test[] = [
     `,
   },
   {
-    name: 'function with default parameters',
-    input: 'fn lerp(a:f32,b:f32,t:f32=0.5)->f32{return mix(a,b,t);}',
+    name: 'function with multiple parameters',
+    input: 'fn lerp(a:f32,b:f32,t:f32)->f32{return mix(a,b,t);}',
     expected: dedent`
-      fn lerp(a: f32, b: f32, t: f32 = 0.5) -> f32 {
+      fn lerp(a: f32, b: f32, t: f32) -> f32 {
         return mix(a, b, t);
       }
     `,
@@ -317,6 +329,54 @@ const tests: Test[] = [
       @fragment
       fn fragment_main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
         return color;
+      }
+    `,
+  },
+  {
+    name: 'loop statement',
+    input: 'fn test(){loop{if(condition){break;}}}',
+    expected: dedent`
+      fn test() {
+        loop {
+          if (condition) {
+            break;
+          }
+        }
+      }
+    `,
+  },
+  {
+    name: 'loop with continuing',
+    input: 'fn test(){loop{if(condition){break;}continuing{count+=1;}}}',
+    expected: dedent`
+      fn test() {
+        loop {
+          if (condition) {
+            break;
+          }
+          continuing {
+            count += 1;
+          }
+        }
+      }
+    `,
+  },
+  {
+    name: 'enable directive',
+    input: 'enable f16;',
+    expected: 'enable f16;',
+  },
+  {
+    name: 'requires directive',
+    input: 'requires readonly_and_readwrite_storage_textures;',
+    expected: 'requires readonly_and_readwrite_storage_textures;',
+  },
+  {
+    name: 'bitcast expression',
+    input: 'fn test(){var result:f32=bitcast<f32>(value);}',
+    expected: dedent`
+      fn test() {
+        var result: f32 = bitcast<f32>(value);
       }
     `,
   },
