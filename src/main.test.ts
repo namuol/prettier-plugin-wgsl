@@ -380,6 +380,89 @@ const tests: Test[] = [
       }
     `,
   },
+  {
+    name: 'typeless bitcast expression',
+    input: 'fn test(){var result:f32=bitcast<>(value);}',
+    expected: dedent`
+      fn test() {
+        var result: f32 = bitcast<>(value);
+      }
+    `,
+  },
+  {
+    name: 'typecast expression - scalar conversion',
+    input: 'fn test(){var result:f32=f32(intValue);}',
+    expected: dedent`
+      fn test() {
+        var result: f32 = f32(intValue);
+      }
+    `,
+  },
+  {
+    name: 'typecast expression - vector constructor',
+    input: 'fn test(){var pos:vec3<f32>=vec3<f32>(1.0,2.0,3.0);}',
+    expected: dedent`
+      fn test() {
+        var pos: vec3<f32> = vec3<f32>(1.0, 2.0, 3.0);
+      }
+    `,
+  },
+  {
+    name: 'typecast expression - matrix constructor',
+    input:
+      'fn test(){var transform:mat4x4<f32>=mat4x4<f32>(col0,col1,col2,col3);}',
+    expected: dedent`
+      fn test() {
+        var transform: mat4x4<f32> = mat4x4<f32>(col0, col1, col2, col3);
+      }
+    `,
+  },
+  {
+    name: 'typecast expression - multiple types',
+    input: 'fn test(){var a:i32=i32(3.14);var b:u32=u32(42);}',
+    expected: dedent`
+      fn test() {
+        var a: i32 = i32(3.14);
+        var b: u32 = u32(42);
+      }
+    `,
+  },
+  {
+    name: 'diagnostic directive - global filter off',
+    input: 'diagnostic(off,derivative_uniformity);var<private>d:f32;',
+    expected: dedent`
+      diagnostic(off, derivative_uniformity);
+      var<private> d: f32;
+    `,
+  },
+  {
+    name: 'diagnostic directive - global filter warning',
+    input: 'diagnostic(warning,subgroup_uniformity);fn test(){}',
+    expected: dedent`
+      diagnostic(warning, subgroup_uniformity);
+      fn test() {}
+    `,
+  },
+  {
+    name: 'diagnostic directive - global filter error',
+    input: 'diagnostic(error,derivative_uniformity);',
+    expected: 'diagnostic(error, derivative_uniformity);',
+  },
+  {
+    name: 'diagnostic directive - global filter info',
+    input: 'diagnostic(info,derivative_uniformity);',
+    expected: 'diagnostic(info, derivative_uniformity);',
+  },
+  {
+    name: 'diagnostic directive - multiple global filters',
+    input:
+      'diagnostic(off,derivative_uniformity);diagnostic(warning,subgroup_uniformity);fn main(){}',
+    expected: dedent`
+      diagnostic(off, derivative_uniformity);
+      diagnostic(warning, subgroup_uniformity);
+      fn main() {}
+    `,
+  },
 ];
 
 describe('prettier-plugin-wgsl', () => {

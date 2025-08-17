@@ -16,6 +16,7 @@ import {
   Continuing,
   CreateExpr,
   Default,
+  Diagnostic,
   ElseIf,
   Enable,
   Expression,
@@ -38,7 +39,6 @@ import {
   Switch,
   TemplateType,
   Type,
-  TypecastExpr,
   UnaryOperator,
   Var,
   VariableExpr,
@@ -180,23 +180,16 @@ const plugin: Plugin<ParsedWgsl> = {
               return printRequires(node as Requires);
             case 'bitcastExpr':
               return printBitcastExpr(node as BitcastExpr);
-            case 'typecastExpr':
-              return printTypecastExpr(node as TypecastExpr);
-
-            // Unimplemented types - group together for exhaustiveness
             case 'diagnostic':
+              return printDiagnostic(node as Diagnostic);
+
+            case 'typecastExpr':
             case 'override':
             case 'staticAssert':
             case 'constExpr':
             case 'defaultSelector':
-              throw new Error(
-                `Unimplemented AST node type: ${node.astNodeType}`,
-              );
-
             default:
-              throw new Error(
-                `Unknown AST node type: ${(node as Node).astNodeType}`,
-              );
+              return text.slice(node.start, node.start + node.length);
           }
         }
 
@@ -938,13 +931,8 @@ const plugin: Plugin<ParsedWgsl> = {
           ];
         }
 
-        function printTypecastExpr(node: TypecastExpr): Doc {
-          return [
-            node.type ? printType(node.type) : '',
-            '(',
-            printExpression((node as unknown as {value: Expression}).value),
-            ')',
-          ];
+        function printDiagnostic(node: Diagnostic): Doc {
+          return ['diagnostic(', node.severity, ', ', node.rule, ');'];
         }
       },
     },
