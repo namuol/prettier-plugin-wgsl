@@ -31,6 +31,7 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@stkb/rewrap": "^0.1.0",
+    "@types/babel__traverse": "^7.28.0",
     "dedent": "^1.6.0",
     "eslint": "^9.33.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
@@ -44,6 +45,10 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@babel/core": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "@babel/types": "^7.28.2",
+    "@prettier/sync": "^0.6.1",
     "wgsl_reflect": "github:namuol/wgsl_reflect"
   }
 }

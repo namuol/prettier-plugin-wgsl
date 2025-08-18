@@ -511,4 +511,34 @@ describe('prettier-plugin-wgsl', () => {
       });
     }
   });
+
+  describe('ts files', () => {
+    for (const test of tests.slice(0, 1)) {
+      it(`should format ${test.name} correctly (tagged template literal)`, async () => {
+        const result = await prettier.format(
+          `const shader = wgsl\`${test.input}\`;\n`,
+          {
+            parser: 'typescript',
+            plugins: [plugin],
+            embeddedLanguageFormatting: 'auto',
+          },
+        );
+        expect(result).toBe(`const shader = wgsl\`${test.expected}\`;\n`);
+      });
+    }
+
+    for (const test of tests.slice(0, 1)) {
+      it(`should format ${test.name} correctly (comment)`, async () => {
+        const result = await prettier.format(
+          `const shader = /*wgsl*/ \`${test.input}\`;\n`,
+          {
+            parser: 'typescript',
+            plugins: [plugin],
+            embeddedLanguageFormatting: 'auto',
+          },
+        );
+        expect(result).toBe(`const shader = /*wgsl*/ \`${test.expected}\`;\n`);
+      });
+    }
+  });
 });
