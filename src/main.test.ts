@@ -513,7 +513,7 @@ describe('prettier-plugin-wgsl', () => {
   });
 
   describe('ts files', () => {
-    for (const test of tests.slice(0, 1)) {
+    for (const test of tests) {
       it(`should format ${test.name} correctly (tagged template literal)`, async () => {
         const result = await prettier.format(
           `const shader = wgsl\`${test.input}\`;\n`,
@@ -527,7 +527,7 @@ describe('prettier-plugin-wgsl', () => {
       });
     }
 
-    for (const test of tests.slice(0, 1)) {
+    for (const test of tests) {
       it(`should format ${test.name} correctly (comment)`, async () => {
         const result = await prettier.format(
           `const shader = /*wgsl*/ \`${test.input}\`;\n`,
