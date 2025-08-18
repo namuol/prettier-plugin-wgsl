@@ -11,6 +11,11 @@ export default defineConfig({
     },
     rollupOptions: {
       external: ['wgsl_reflect'],
+      output: {
+        globals: {
+          wgsl_reflect: 'wgsl_reflect',
+        },
+      },
     },
   },
 });

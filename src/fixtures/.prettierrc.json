@@ -1,0 +1,4 @@
+{
+  "plugins": ["../../dist/prettier-plugin-wgsl.js"],
+  "embeddedLanguageFormatting": "auto"
+}
