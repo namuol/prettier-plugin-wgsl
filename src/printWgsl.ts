@@ -48,10 +48,42 @@ import {
 
 import {ParsedWgsl} from './types';
 
-const {hardline, indent, join} = builders;
+const {hardline, indent, join, line, softline, group, ifBreak} = builders;
 
 export function printWgsl({text, statements}: ParsedWgsl) {
   return join(hardline, statements.map(printStatement));
+
+  // Helper function to print comma-separated lists with intelligent line
+  // wrapping
+  function printCommaSeparatedList<T>(
+    items: T[],
+    printItem: (item: T) => Doc,
+    options: {
+      shouldBreak?: boolean;
+      trailingComma?: boolean;
+    } = {},
+  ): Doc {
+    if (items.length === 0) {
+      return '';
+    }
+
+    const {shouldBreak = false, trailingComma = true} = options;
+
+    const parts = items.map(printItem);
+
+    return group(
+      [
+        ifBreak('', ''),
+        indent([
+          softline,
+          join([',', line], parts),
+          ifBreak(trailingComma ? ',' : '', ''),
+        ]),
+        softline,
+      ],
+      {shouldBreak},
+    );
+  }
 
   function printWgslNode(node: Node): Doc {
     switch (node.astNodeType) {
@@ -271,12 +303,7 @@ export function printWgsl({text, statements}: ParsedWgsl) {
     parts.push('fn ', node.name, '(');
 
     if (node.args.length > 0) {
-      parts.push(
-        join(
-          ', ',
-          node.args.map((arg) => printArgument(arg)),
-        ),
-      );
+      parts.push(printCommaSeparatedList(node.args, printArgument));
     }
 
     parts.push(')');
@@ -509,12 +536,7 @@ export function printWgsl({text, statements}: ParsedWgsl) {
     const parts: Doc[] = [node.name, '('];
 
     if (node.args.length > 0) {
-      parts.push(
-        join(
-          ', ',
-          node.args.map((arg) => printExpression(arg)),
-        ),
-      );
+      parts.push(printCommaSeparatedList(node.args, printExpression));
     }
 
     parts.push(')', ';');
@@ -598,12 +620,7 @@ export function printWgsl({text, statements}: ParsedWgsl) {
     const parts: Doc[] = [node.name, '('];
 
     if (node.args && node.args.length > 0) {
-      parts.push(
-        join(
-          ', ',
-          node.args.map((arg) => printExpression(arg)),
-        ),
-      );
+      parts.push(printCommaSeparatedList(node.args, printExpression));
     }
 
     parts.push(')');
@@ -630,12 +647,7 @@ export function printWgsl({text, statements}: ParsedWgsl) {
       parts.push('(');
 
       if (hasArgs) {
-        parts.push(
-          join(
-            ', ',
-            node.args!.map((arg) => printExpression(arg)),
-          ),
-        );
+        parts.push(printCommaSeparatedList(node.args!, printExpression));
       }
 
       parts.push(')');

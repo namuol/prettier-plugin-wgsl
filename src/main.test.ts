@@ -497,6 +497,100 @@ const tests: Test[] = [
       }
     `,
   },
+  {
+    name: 'long function parameter list - should wrap',
+    input:
+      'fn longFunction(parameter1:f32,parameter2:vec3<f32>,parameter3:mat4x4<f32>,parameter4:array<f32,16>,parameter5:texture_2d<f32>,parameter6:sampler,parameter7:ptr<function,f32>)->f32{return 0.0;}',
+    expected: dedent`
+      fn longFunction(
+        parameter1: f32,
+        parameter2: vec3<f32>,
+        parameter3: mat4x4<f32>,
+        parameter4: array<f32, 16>,
+        parameter5: texture_2d<f32>,
+        parameter6: sampler,
+        parameter7: ptr<function, f32>,
+      ) -> f32 {
+        return 0.0;
+      }
+    `,
+  },
+  {
+    name: 'long function call arguments - should wrap',
+    input:
+      'var result:vec4<f32>=mix(vec4<f32>(1.0,2.0,3.0,1.0),vec4<f32>(4.0,5.0,6.0,1.0),vec4<f32>(0.2,0.4,0.6,0.8));',
+    expected: dedent`
+      var result: vec4<f32> = mix(
+        vec4<f32>(1.0, 2.0, 3.0, 1.0),
+        vec4<f32>(4.0, 5.0, 6.0, 1.0),
+        vec4<f32>(0.2, 0.4, 0.6, 0.8),
+      );
+    `,
+  },
+  {
+    name: 'long array constructor - should wrap',
+    input:
+      'var colors:array<vec4<f32>,8>=array<vec4<f32>,8>(vec4<f32>(1.0,0.0,0.0,1.0),vec4<f32>(0.0,1.0,0.0,1.0),vec4<f32>(0.0,0.0,1.0,1.0),vec4<f32>(1.0,1.0,0.0,1.0),vec4<f32>(1.0,0.0,1.0,1.0),vec4<f32>(0.0,1.0,1.0,1.0),vec4<f32>(0.5,0.5,0.5,1.0),vec4<f32>(0.0,0.0,0.0,1.0));',
+    expected: dedent`
+      var colors: array<vec4<f32>, 8> = array<vec4<f32>, 8>(
+        vec4<f32>(1.0, 0.0, 0.0, 1.0),
+        vec4<f32>(0.0, 1.0, 0.0, 1.0),
+        vec4<f32>(0.0, 0.0, 1.0, 1.0),
+        vec4<f32>(1.0, 1.0, 0.0, 1.0),
+        vec4<f32>(1.0, 0.0, 1.0, 1.0),
+        vec4<f32>(0.0, 1.0, 1.0, 1.0),
+        vec4<f32>(0.5, 0.5, 0.5, 1.0),
+        vec4<f32>(0.0, 0.0, 0.0, 1.0),
+      );
+    `,
+  },
+  {
+    name: 'long struct with many members - should wrap',
+    input:
+      'struct VertexData{position:vec3<f32>,normal:vec3<f32>,uv:vec2<f32>,color:vec4<f32>,tangent:vec3<f32>,bitangent:vec3<f32>,materialId:u32,lightmapUV:vec2<f32>}',
+    expected: dedent`
+      struct VertexData {
+        position: vec3<f32>,
+        normal: vec3<f32>,
+        uv: vec2<f32>,
+        color: vec4<f32>,
+        tangent: vec3<f32>,
+        bitangent: vec3<f32>,
+        materialId: u32,
+        lightmapUV: vec2<f32>,
+      }
+    `,
+  },
+  {
+    name: 'nested function calls - should wrap appropriately',
+    input:
+      'var result:f32=clamp(mix(smoothstep(0.0,1.0,value1),smoothstep(0.0,1.0,value2),interpolation),minimumValue,maximumValue);',
+    expected: dedent`
+      var result: f32 = clamp(
+        mix(
+          smoothstep(0.0, 1.0, value1),
+          smoothstep(0.0, 1.0, value2),
+          interpolation,
+        ),
+        minimumValue,
+        maximumValue,
+      );
+    `,
+  },
+  {
+    name: 'short function parameters - should not wrap',
+    input: 'fn add(a:f32,b:f32)->f32{return a+b;}',
+    expected: dedent`
+      fn add(a: f32, b: f32) -> f32 {
+        return a + b;
+      }
+    `,
+  },
+  {
+    name: 'short function call - should not wrap',
+    input: 'var result:f32=add(1.0,2.0);',
+    expected: 'var result: f32 = add(1.0, 2.0);',
+  },
 ];
 
 describe('prettier-plugin-wgsl', () => {
