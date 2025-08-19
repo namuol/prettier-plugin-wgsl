@@ -1,3 +1,7 @@
+> [!CAUTION]
+>
+> This plugin is untested/pre-alpha. You probably want to use something else.
+
 # prettier-plugin-wgsl
 
 A [Prettier](https://prettier.io/) plugin for formatting [WGSL (WebGPU Shading Language)](https://gpuweb.github.io/gpuweb/wgsl/) code.
