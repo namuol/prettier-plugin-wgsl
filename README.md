@@ -50,8 +50,26 @@ Language)](https://gpuweb.github.io/gpuweb/wgsl/) code.
 
 ## Installation
 
+> [!WARNING]
+>
+> As this is pre-alpha software, it's not on NPM yet. "Nightly" builds are
+> available through your package manager using
+> `github:namuol/prettier-plugin-wgsl`
+
 ```bash
-npm install --save-dev prettier-plugin-wgsl
+npm i -D github:namuol/prettier-plugin-wgsl
+```
+
+```
+yarn add -D github:namuol/prettier-plugin-wgsl
+```
+
+```
+pnpm add -D github:namuol/prettier-plugin-wgsl
+```
+
+```
+bun add -D github:namuol/prettier-plugin-wgsl
 ```
 
 ## Usage
