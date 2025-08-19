@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "npm run build"
   },
   "lint-staged": {
     "**/*.{ts,tsx,json,css,md}": [
