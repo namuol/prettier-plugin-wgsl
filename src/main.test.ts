@@ -591,6 +591,169 @@ const tests: Test[] = [
     input: 'var result:f32=add(1.0,2.0);',
     expected: 'var result: f32 = add(1.0, 2.0);',
   },
+  {
+    name: 'switch case with many selectors - could wrap',
+    input:
+      'fn test(){switch(value){case 1,2,3,4,5,6,7,8,9,10:{result=1;}default:{result=0;}}}',
+    expected: dedent`
+      fn test() {
+        switch (value) {
+          case 1, 2, 3, 4, 5, 6, 7, 8, 9, 10: {
+            result = 1;
+          }
+          default: {
+            result = 0;
+          }
+        }
+      }
+    `,
+  },
+  {
+    name: 'matrix constructor with many elements - should use row-visual format',
+    input:
+      'var transform:mat4x4<f32>=mat4x4<f32>(1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0);',
+    expected: dedent`
+      var transform: mat4x4<f32> = mat4x4<f32>(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      );
+    `,
+  },
+  {
+    name: 'attribute with multiple parameters - already working',
+    input: '@workgroup_size(64,32,16)fn compute_main(){}',
+    expected: dedent`
+      @workgroup_size(64, 32, 16)
+      fn compute_main() {}
+    `,
+  },
+  // Matrix formatting tests
+  {
+    name: 'matrix 4x4 identity - should use row-visual format',
+    input:
+      'var transform:mat4x4<f32>=mat4x4<f32>(1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0);',
+    expected: dedent`
+      var transform: mat4x4<f32> = mat4x4<f32>(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      );
+    `,
+  },
+  {
+    name: 'matrix 3x3 rotation - should use row-visual format',
+    input:
+      'var rotation:mat3x3<f32>=mat3x3<f32>(0.866,-0.5,0.0,0.5,0.866,0.0,0.0,0.0,1.0);',
+    expected: dedent`
+      var rotation: mat3x3<f32> = mat3x3<f32>(
+        0.866, -0.5, 0.0,
+        0.5, 0.866, 0.0,
+        0.0, 0.0, 1.0,
+      );
+    `,
+  },
+  {
+    name: 'matrix 2x2 - should stay compact (too small for special formatting)',
+    input: 'var scale:mat2x2<f32>=mat2x2<f32>(2.0,0.0,0.0,2.0);',
+    expected: 'var scale: mat2x2<f32> = mat2x2<f32>(2.0, 0.0, 0.0, 2.0);',
+  },
+  {
+    name: 'matrix with complex expressions - should use regular formatting',
+    input:
+      'var dynamic:mat3x3<f32>=mat3x3<f32>(cos(angle),-sin(angle),0.0,sin(angle),cos(angle),0.0,0.0,0.0,1.0);',
+    expected: dedent`
+      var dynamic: mat3x3<f32> = mat3x3<f32>(
+        cos(angle),
+        -sin(angle),
+        0.0,
+        sin(angle),
+        cos(angle),
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+      );
+    `,
+  },
+  {
+    name: 'matrix with variables - should use regular formatting',
+    input:
+      'var transform:mat4x4<f32>=mat4x4<f32>(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);',
+    expected: dedent`
+      var transform: mat4x4<f32> = mat4x4<f32>(
+        a,
+        b,
+        c,
+        d,
+        e,
+        f,
+        g,
+        h,
+        i,
+        j,
+        k,
+        l,
+        m,
+        n,
+        o,
+        p,
+      );
+    `,
+  },
+  {
+    name: 'matrix from column vectors - should use regular formatting',
+    input:
+      'var transform:mat4x4<f32>=mat4x4<f32>(vec4<f32>(1.0,0.0,0.0,0.0),vec4<f32>(0.0,1.0,0.0,0.0),vec4<f32>(0.0,0.0,1.0,0.0),vec4<f32>(0.0,0.0,0.0,1.0));',
+    expected: dedent`
+      var transform: mat4x4<f32> = mat4x4<f32>(
+        vec4<f32>(1.0, 0.0, 0.0, 0.0),
+        vec4<f32>(0.0, 1.0, 0.0, 0.0),
+        vec4<f32>(0.0, 0.0, 1.0, 0.0),
+        vec4<f32>(0.0, 0.0, 0.0, 1.0),
+      );
+    `,
+  },
+  {
+    name: 'matrix wrong argument count - should use regular formatting',
+    input: 'var incomplete:mat3x3<f32>=mat3x3<f32>(1.0,0.0,0.0,1.0);',
+    expected: 'var incomplete: mat3x3<f32> = mat3x3<f32>(1.0, 0.0, 0.0, 1.0);',
+  },
+  {
+    name: 'non-matrix function with many args - should use regular formatting',
+    input:
+      'var result:f32=veryLongFunctionNameThatShouldTriggerWrapping(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0);',
+    expected: dedent`
+      var result: f32 = veryLongFunctionNameThatShouldTriggerWrapping(
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0,
+      );
+    `,
+  },
+  {
+    name: 'matrix 4x3 rectangular - should use row-visual format',
+    input:
+      'var proj:mat4x3<f32>=mat4x3<f32>(1.0,0.0,0.0,10.0,0.0,1.0,0.0,20.0,0.0,0.0,1.0,30.0);',
+    expected: dedent`
+      var proj: mat4x3<f32> = mat4x3<f32>(
+        1.0, 0.0, 0.0, 10.0,
+        0.0, 1.0, 0.0, 20.0,
+        0.0, 0.0, 1.0, 30.0,
+      );
+    `,
+  },
 ];
 
 describe('prettier-plugin-wgsl', () => {

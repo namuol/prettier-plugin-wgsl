@@ -85,6 +85,88 @@ export function printWgsl({text, statements}: ParsedWgsl) {
     );
   }
 
+  // Helper function to detect matrix constructors and their dimensions
+  function getMatrixDimensions(
+    typeName: string,
+  ): {cols: number; rows: number} | null {
+    // Handle both mat4x4 and mat4x4<f32> formats
+    const matrixMatch = typeName.match(/^mat(\d)x(\d)(?:<.*>)?$/);
+    if (matrixMatch) {
+      return {cols: parseInt(matrixMatch[1]!), rows: parseInt(matrixMatch[2]!)};
+    }
+    return null;
+  }
+
+  // Helper function to check if an expression is a literal or simple
+  // literal-based expression
+  function isLiteralOrSimple(expr: Expression): boolean {
+    const exprNode = expr as Expression & {astNodeType: string};
+
+    switch (exprNode.astNodeType) {
+      case 'literalExpr':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  // Helper function to check if arguments are suitable for matrix row-visual
+  // formatting
+  function shouldUseMatrixRowFormat(
+    typeName: string,
+    args: Expression[],
+  ): {use: boolean; dimensions?: {cols: number; rows: number}} {
+    const dimensions = getMatrixDimensions(typeName);
+
+    if (!dimensions) {
+      return {use: false};
+    }
+
+    // Skip 2x2 matrices (too small to benefit from special formatting)
+    if (dimensions.cols <= 2 && dimensions.rows <= 2) {
+      return {use: false, dimensions};
+    }
+
+    // Check if we have the right number of arguments
+    const expectedArgCount = dimensions.cols * dimensions.rows;
+    if (args.length !== expectedArgCount) {
+      return {use: false, dimensions};
+    }
+
+    // Check if ALL arguments are literals or simple literal-based expressions
+    const allLiteralsOrSimple = args.every(isLiteralOrSimple);
+
+    // Only use row format if ALL arguments are literals/simple expressions This
+    // ensures we don't format matrices with variables, function calls, etc.
+    if (allLiteralsOrSimple) {
+      return {use: true, dimensions};
+    }
+
+    return {use: false, dimensions};
+  }
+
+  // Helper function to format matrix arguments in row-visual layout
+  function printMatrixRowFormat(
+    args: Expression[],
+    dimensions: {cols: number; rows: number},
+  ): Doc {
+    const {cols, rows} = dimensions;
+    const rowParts: Doc[] = [];
+
+    for (let row = 0; row < rows; row++) {
+      const rowElements: Doc[] = [];
+      for (let col = 0; col < cols; col++) {
+        // Format arguments in visual row-major order for readability Each row
+        // contains 'cols' consecutive elements
+        const index = row * cols + col;
+        rowElements.push(printExpression(args[index]!));
+      }
+      rowParts.push(join(', ', rowElements));
+    }
+
+    return [indent([softline, join([',', line], rowParts), ',']), softline];
+  }
+
   function printWgslNode(node: Node): Doc {
     switch (node.astNodeType) {
       // Statement types
@@ -620,7 +702,15 @@ export function printWgsl({text, statements}: ParsedWgsl) {
     const parts: Doc[] = [node.name, '('];
 
     if (node.args && node.args.length > 0) {
-      parts.push(printCommaSeparatedList(node.args, printExpression));
+      // Check if this is a matrix constructor that should use row-visual
+      // formatting
+      const matrixCheck = shouldUseMatrixRowFormat(node.name, node.args);
+
+      if (matrixCheck.use && matrixCheck.dimensions) {
+        parts.push(printMatrixRowFormat(node.args, matrixCheck.dimensions));
+      } else {
+        parts.push(printCommaSeparatedList(node.args, printExpression));
+      }
     }
 
     parts.push(')');
@@ -647,7 +737,20 @@ export function printWgsl({text, statements}: ParsedWgsl) {
       parts.push('(');
 
       if (hasArgs) {
-        parts.push(printCommaSeparatedList(node.args!, printExpression));
+        // Check if this is a matrix constructor that should use row-visual
+        // formatting
+        let typeName = '';
+        if (node.type) {
+          typeName = node.type.name;
+        }
+
+        const matrixCheck = shouldUseMatrixRowFormat(typeName, node.args!);
+
+        if (matrixCheck.use && matrixCheck.dimensions) {
+          parts.push(printMatrixRowFormat(node.args!, matrixCheck.dimensions));
+        } else {
+          parts.push(printCommaSeparatedList(node.args!, printExpression));
+        }
       }
 
       parts.push(')');
@@ -790,12 +893,18 @@ export function printWgsl({text, statements}: ParsedWgsl) {
   }
 
   function printCase(node: Case): Doc {
-    const parts: Doc[] = [];
+    const parts: Doc[] = ['case '];
 
-    node.selectors.forEach((selector, i) => {
-      if (i > 0) parts.push(', ');
-      parts.push('case ', printExpression(selector));
-    });
+    // Use our line wrapping helper for multiple selectors
+    if (node.selectors.length > 1) {
+      parts.push(
+        printCommaSeparatedList(node.selectors, printExpression, {
+          trailingComma: false,
+        }),
+      );
+    } else if (node.selectors.length === 1) {
+      parts.push(printExpression(node.selectors[0]!));
+    }
 
     parts.push(': {');
 

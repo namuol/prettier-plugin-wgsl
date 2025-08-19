@@ -4,7 +4,8 @@
 
 # prettier-plugin-wgsl
 
-A [Prettier](https://prettier.io/) plugin for formatting [WGSL (WebGPU Shading Language)](https://gpuweb.github.io/gpuweb/wgsl/) code.
+A [Prettier](https://prettier.io/) plugin for formatting [WGSL (WebGPU Shading
+Language)](https://gpuweb.github.io/gpuweb/wgsl/) code.
 
 ## Features
 
@@ -19,6 +20,7 @@ A [Prettier](https://prettier.io/) plugin for formatting [WGSL (WebGPU Shading L
   `;
   ```
 - Supports `/*wgsl*/` comment syntax:
+
   ```ts
   /*wgsl*/ `
     @vertex
@@ -28,6 +30,22 @@ A [Prettier](https://prettier.io/) plugin for formatting [WGSL (WebGPU Shading L
       return output;
     }
   `;
+  ```
+
+- (Experimental) Formats matrices with a row-by-row layout for improved
+  readability:
+
+  ```wgsl
+  // Before
+  var transform: mat4x4<f32> = mat4x4<f32>(1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0);
+
+  // After
+  var transform: mat4x4<f32> = mat4x4<f32>(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  );
   ```
 
 ## Installation
